@@ -98,8 +98,8 @@ ViewModel의 역할은 다음과 같습니다.
 
 앞선 내용들을 토대로 ViewModel은 Activity에게 정보를 주기 위해서는 [LiveData](https://github.com/tnvnfdla1214/LiveData) (+ MutableLiveData)를 이용합니다.
 
-https://github.com/tnvnfdla1214/ToDoApp
-https://developer.android.com/jetpack/guide?hl=ko
-https://developer.android.com/jetpack/guide/ui-layer?hl=ko
-https://stanleykou.tistory.com/entry/httpsproandroiddevcomshould-we-choose-kotlins-stateflow-or-sharedflow-to-substitute-for-android-s-livedata-2d69f2bd6fa5
-https://aroundck.tistory.com/7736
+그러나 LiveData또한 UI에 밀집하게 연관되어 있고 안드로이드 플렛폼이기 때문에  사용을 지양한다 합니다.
+
+그렇기에 [StateFlow](https://github.com/tnvnfdla1214/StateFlow) 를 사용하게 되는데 링크를 따라 글을 읽어보시기 바랍니다.
+
+
