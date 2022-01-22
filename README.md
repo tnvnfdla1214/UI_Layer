@@ -102,4 +102,5 @@ ViewModel의 역할은 다음과 같습니다.
 
 그렇기에 [StateFlow](https://github.com/tnvnfdla1214/StateFlow) 를 사용하게 되는데 링크를 따라 글을 읽어보시기 바랍니다.
 
-
+https://developer.android.com/jetpack/guide?hl=ko
+https://developer.android.com/jetpack/guide/ui-layer?hl=ko
