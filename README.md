@@ -91,7 +91,7 @@ ViewModel의 역할은 다음과 같습니다.
 + 테스트 가능성: 상태 소스가 분리되므로 UI와 별개로 테스트할 수 있습니다.
 + 유지 관리성: 상태 변경은 잘 정의된 패턴을 따릅니다. 즉, 변경은 사용자 이벤트 및 데이터를 가져온 소스 모두의 영향을 받습니다.
 
-## @중요@  UI 상태 노출
+## UI 상태 노출
 우리는 ViewModel의 중요성을 알게 되었습니다. 물론 위와 같은 사항은 **Architecture Pattern** 차트에서 설명한 내용과 일치하여 이해가 쉽습니다.
 
 중요한 부분은 이차트인데 정보가 부족해 정말 애를 많이 먹었습니다.
@@ -167,7 +167,7 @@ class UserRepository @Inject constructor (private val userDao: UserDao) {
     .
 }
 ```
-## @중요@ UI 상태 사용
+## UI 상태 사용
 UI에서 UiState 객체의 스트림을 사용하려면 사용 중인 관찰 가능한 데이터 유형에 터미널 연산자를 사용합니다. 예를 들어 LiveData의 경우 observe() 메서드를 사용하고 Kotlin 흐름의 경우 collect() 메서드나 이 메서드의 변형을 사용합니다.
 
 UI에서 관찰 가능한 데이터 홀더를 사용할 때는 UI의 수명 주기를 고려해야 합니다. 수명 주기를 고려해야 하는 이유는 사용자에게 뷰가 표시되지 않을 때 UI가 UI 상태를 관찰해서는 안 되기 때문입니다. 이 주제에 관한 자세한 내용은 이 블로그 게시물을 참고하세요. LiveData를 사용하면 LifecycleOwner가 수명 주기 문제를 암시적으로 처리합니다. 흐름을 사용할 때는 적절한 코루틴 범위와 repeatOnLifecycle API로 처리하는 것이 가장 좋습니다.
@@ -211,3 +211,42 @@ class MainActivity : AppCompatActivity() {
     .
 }
 ```
+## UI 이벤트 결정 트리
+이 차트는 UI이벤트에 대한 설명입니다.
+
+[MVVM](https://github.com/tnvnfdla1214/MVVM) 포스터를 보시면 StartForResult, buttonListner 등 의 코드는 Activity나 Fragment등 UI에 작성되서는 안된다고 합니다.(UI에는 binding만이 있고 아무것도 없어야 한다고 개발자들은 말합니다.)
+
+저는 처음 MVVM을 목표로 아키텍쳐 작성에 힘을 썼으나 예시 코드를 찾을 수 없었고 하는 수 없이 UI에 작성하게 되었고 확신을 할 수없다가 흘러흘러 [이 포스터](https://developer.android.com/jetpack/guide/ui-layer/events)를 발견하였습니다.
+
+이 포스터에의 결정 트리 그림에서는 UI 관련은 작성해도 된다는것에 확신을 가졌습니다.
+
+
+<div align="center">
+<img src = "https://user-images.githubusercontent.com/48902047/150813308-da7a7f54-95b9-48b1-9b23-b33482110356.png" width="50%" height="50%">
+</div>
+
+이 포스터의 예시로
+ ```Kotlin
+class LatestNewsActivity : AppCompatActivity() {
+
+    private lateinit var binding: ActivityLatestNewsBinding
+    private val viewModel: LatestNewsViewModel by viewModels()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        /* ... */
+
+        // The expand section event is processed by the UI that
+        // modifies a View's internal state.
+        binding.expandButton.setOnClickListener {
+            binding.expandedSection.visibility = View.VISIBLE
+        }
+
+        // The refresh event is processed by the ViewModel that is in charge
+        // of the business logic.
+        binding.refreshButton.setOnClickListener {
+            viewModel.refreshNews()
+        }
+    }
+}
+```
+클릭 리스너나 ViSIBLE 등 의 작성을 해도 된다고 설명합니다.
