@@ -102,5 +102,23 @@ ViewModel의 역할은 다음과 같습니다.
 
 그렇기에 [StateFlow](https://github.com/tnvnfdla1214/StateFlow) 를 사용하게 되는데 링크를 따라 글을 읽어보시기 바랍니다.
 
-https://developer.android.com/jetpack/guide?hl=ko
-https://developer.android.com/jetpack/guide/ui-layer?hl=ko
+이 [프로젝트 예시](https://github.com/tnvnfdla1214/User_StateFlow)를 보면
+
+먼저 ViewModel 입니다.
+ ```Kotlin
+class UserViewModel
+@ViewModelInject
+constructor(private val userRepository: UserRepository) : ViewModel(){
+
+    private val _expense = MutableStateFlow<State>(State.Empty)
+    val expense: StateFlow<State> = _expense
+    .
+    .
+}
+```
+UI에 노출되는 데이터가 비교적 간단할 때는 UI 상태 유형으로 데이터를 래핑하는 것이 좋은 경우가 많습니다. 내보낸 상태 홀더와 관련 화면/UI 요소 간의 관계를 전달하기 때문입니다. 또한 UI 요소가 더 복잡해질 때 언제나 간편하게 UI 상태 정의를 추가하여 UI 요소를 렌더링하는 데 필요한 더 많은 정보를 포함할 수 있습니다.
+
+UiState 스트림을 만드는 일반적인 방법은 ViewModel에서 지원되는 변경 가능한 스트림을 변경 불가능한 스트림으로 노출하는 것입니다. 예를 들어 MutableStateFlow<UiState>를 StateFlow<UiState>로 노출합니다.
+
+
+
