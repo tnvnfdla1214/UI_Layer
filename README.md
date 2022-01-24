@@ -1,6 +1,6 @@
 # UI 레이어
 
-이 포스터는 [앱 아키텍쳐 가이드](https://developer.android.com/jetpack/guide?hl=ko)를 학습한 후 [ToDo](https://github.com/tnvnfdla1214/ToDo) 프로젝트 작성하여 설명하고 있습니다.
+이 포스터는 [앱 아키텍쳐 가이드](https://developer.android.com/jetpack/guide?hl=ko)으로 학습후 정리한 내용입니다.
 
 ## UI 레이어란
 사용자 상호작용(예: 버튼 누르기) 또는 외부 입력(예: 네트워크 응답)으로 인해 데이터가 변할 때마다 변경사항을 반영하도록 UI가 업데이트되어야 합니다. 사실상 UI는 데이터 레이어에서 가져온 애플리케이션 상태를 시각적으로 나타냅니다. 
@@ -118,7 +118,96 @@ constructor(private val userRepository: UserRepository) : ViewModel(){
 ```
 UI에 노출되는 데이터가 비교적 간단할 때는 UI 상태 유형으로 데이터를 래핑하는 것이 좋은 경우가 많습니다. 내보낸 상태 홀더와 관련 화면/UI 요소 간의 관계를 전달하기 때문입니다. 또한 UI 요소가 더 복잡해질 때 언제나 간편하게 UI 상태 정의를 추가하여 UI 요소를 렌더링하는 데 필요한 더 많은 정보를 포함할 수 있습니다.
 
-UiState 스트림을 만드는 일반적인 방법은 ViewModel에서 지원되는 변경 가능한 스트림을 변경 불가능한 스트림으로 노출하는 것입니다. 예를 들어 MutableStateFlow<UiState>를 StateFlow<UiState>로 노출합니다.
+UiState 스트림을 만드는 일반적인 방법은 ViewModel에서 지원되는 변경 가능한 스트림을 변경 불가능한 스트림으로 노출하는 것입니다. 예를 들어 MutableStateFlow\<UiState>를 StateFlow\<UiState>로 노출합니다.
 
+그런 다음 ViewModel은 상태를 내부적으로 변경하는 메서드를 노출하여 UI에 사용되도록 업데이트를 게시합니다. 예를 들어 비동기 작업을 실행해야 하는 경우 viewModelScope를 사용하여 코루틴을 실행하고 코루틴이 완료되면 변경 가능한 상태를 업데이트할 수 있습니다.
+ 
+ ```Kotlin
+class UserViewModel
+@ViewModelInject
+constructor(private val userRepository: UserRepository) : ViewModel(){
+     .
+     .
+     init {
+        viewModelScope.launch{
+            _expense.value = State.Loading
+            when (val response = userRepository.getUser()) {
+                is Resource.Error -> _expense.value = State.Failure(response.message!!)
+                is Resource.Success -> _expense.value = State.Success(response.data!!)
+            }
+        }
+    }
+    .
+    .
+}
+```
+이에 관해 StateFlow를 사용하기 위해 Secees와 Erorror등의 상태의 바뀜이 있어야 합니다.
 
+이 프로젝트는 Resource.kr을 사용하여 상태를 정의 하였습니다.
 
+ ```Kotlin
+sealed class Resource<T>(val data: T?, val message: String?) {
+    class Success<T>(data: T) : Resource<T>(data, null)
+    class Error<T>(message: String) : Resource<T>(null, message)
+}
+```
+그 후 Repository에서 해당하는 함수에 결과값에 대한 정의를 하였습니다.
+
+ ```Kotlin
+class UserRepository @Inject constructor (private val userDao: UserDao) {
+    fun getUser() : Resource<List<User>> {
+        return try {
+            val response = userDao.getUser()
+            Resource.Success(response)
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "에러가 발생했습니다.")
+        }
+    }
+    .
+    .
+}
+```
+## @중요@ UI 상태 사용
+UI에서 UiState 객체의 스트림을 사용하려면 사용 중인 관찰 가능한 데이터 유형에 터미널 연산자를 사용합니다. 예를 들어 LiveData의 경우 observe() 메서드를 사용하고 Kotlin 흐름의 경우 collect() 메서드나 이 메서드의 변형을 사용합니다.
+
+UI에서 관찰 가능한 데이터 홀더를 사용할 때는 UI의 수명 주기를 고려해야 합니다. 수명 주기를 고려해야 하는 이유는 사용자에게 뷰가 표시되지 않을 때 UI가 UI 상태를 관찰해서는 안 되기 때문입니다. 이 주제에 관한 자세한 내용은 이 블로그 게시물을 참고하세요. LiveData를 사용하면 LifecycleOwner가 수명 주기 문제를 암시적으로 처리합니다. 흐름을 사용할 때는 적절한 코루틴 범위와 repeatOnLifecycle API로 처리하는 것이 가장 좋습니다.
+
+ ```Kotlin
+@AndroidEntryPoint
+class MainActivity : AppCompatActivity() {
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var userAdapter:UserAdapter
+    private val userViewModel:UserViewModel by viewModels()
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+        observe()
+        .
+        .
+    }
+    .
+    .
+    fun observe(){
+        lifecycleScope.launch {
+            userViewModel.expense.collect { event->
+                when(event) {
+                    is State.Loading -> {
+
+                    }
+                    is State.Success -> {
+                        userAdapter.setUser(event.List as ArrayList<User>)
+                    }
+                    is State.Failure -> {
+
+                    }
+                    else -> {
+
+                    }
+                }
+            }
+        }
+    }
+    .
+    .
+}
+```
